@@ -1,16 +1,19 @@
 import { Browser, Builder } from "selenium-webdriver";
 import type { WebDriver } from "selenium-webdriver";
 import SearchPage from "../pages/search_page";
+import { Options } from "selenium-webdriver/firefox";
 
 const url = "https://www.kriso.ee";
 const TIMEOUT = 5000;
+const searchKeyWord = "harry";
 
 let driver: WebDriver;
 let searchPage: SearchPage;
 
 describe("Search products by keywords", () => {
   beforeEach(async () => {
-    driver = await new Builder().forBrowser(Browser.FIREFOX).build();
+    const options = new Options().addArguments("--headless");
+    driver = await new Builder().forBrowser(Browser.FIREFOX).setFirefoxOptions(options).build();
 
     await driver.manage().window().maximize();
     await driver.manage().setTimeouts({ implicit: TIMEOUT });
@@ -18,65 +21,68 @@ describe("Search products by keywords", () => {
     await driver.get(url);
 
     searchPage = new SearchPage(driver);
+    await searchPage.acceptCookies();
   });
 
   afterEach(async () => {
     await driver.quit();
   });
 
-  // test("Confirm the page has a Kriso title/logo", async () => {
-  //   let logo = await searchPage.isLogoRendered();
-  //   expect(logo).toBeTruthy();
-  // });
-  //
-  // test("Search harry potter and ensure multiple products are shown", async () => {
-  //   let searchKeyWord = "harry potter";
-  //   await searchPage.search(searchKeyWord);
-  //   const results = await searchPage.getSearchResults();
-  //
-  //   console.log(results)
-  //
-  //   expect(results).toBeTruthy();
-  // });
-  //
-  // test("Seach harry potter and ensure that the results contain the search keyword", async () => {
-  //   let searchKeyWord = "harry potter";
-  //   await searchPage.search(searchKeyWord);
-  //   let results = await searchPage.getSearchResults();
-  //
-  //   for (const result of results) {
-  //     const title = await result.getTitle();
-  //     const desc = await result.getDescription();
-  //
-  //     if (title.includes(searchKeyWord)) {
-  //       expect(title).toContain(searchKeyWord.toLowerCase());
-  //     } else {
-  //       expect(desc).toContain(searchKeyWord.toLowerCase());
-  //     }
-  //   }
-  // });
+  test("Confirm the page has a Kriso title/logo", async () => {
+    await searchPage.isLogoRendered();
+  });
+
+  test("Search harry potter and ensure multiple products are shown", async () => {
+    await searchPage.search(searchKeyWord);
+    await searchPage.doSearchResultsShowUp();
+  });
+
+  test("Seach harry potter and ensure that the results contain the search keyword", async () => {
+    const searchKeyWord = "harry potter";
+    await searchPage.search(searchKeyWord);
+    await searchPage.doSearchResultsContainSearchKeyWord(searchKeyWord);
+  });
 
   test("Ensure that products can be sorted by subject", async () => {
-    let searchKeyWord = "harry";
+    await searchPage.search(searchKeyWord);
+    const filters = await searchPage.getFilteringOptions();
+    await filters.findAndClickFilter("Arts and Architecture");
+    await searchPage.doesSelectedSubjectShowFilteredResults();
+
+  });
+
+  test("Ensure that products can be sorted by price", async () => {
     await searchPage.search(searchKeyWord);
 
     let filters = await searchPage.getFilteringOptions();
-    let subjects = await filters.getSubjects();
-    const firstSubject = subjects[0];
-    const firstSubjectText = await firstSubject.getText();
 
-    console.log(firstSubject);
+    const priceFilters = await filters.getPriceFilters();
+    const firstPriceFilter = priceFilters[0];
 
-    expect(firstSubject).toBeDefined();
+    const minMax = await filters.getMinMaxPriceFromPriceFilter();
+    if (!minMax[0]) {
+      return;
+    }
+    const firstMinMax = minMax[0];
 
-    await firstSubject.click();
+    await firstPriceFilter.click();
 
-    filters = await searchPage.getFilteringOptions();
+    const results = await searchPage.getSearchResults();
 
-    const selected = await filters.getSelectedSubject()
+    for (const result of results) {
+      const bookPrice = await result.getPrice();
 
-    console.log(await selected?.getText())
+      expect(bookPrice).toBeGreaterThan(firstMinMax.min);
+      expect(bookPrice).toBeLessThan(firstMinMax.max);
+    }
 
-    expect(await driver.getTitle()).toContain(firstSubjectText);
+    expect(priceFilters).toBeDefined();
+  });
+
+  test("Ensure when filtering Estonian books search results show Estonian books", async () => {
+    const searchOption = "estonian2";
+    await searchPage.selectSearchOption(searchOption);
+    await searchPage.search(searchKeyWord);
+    await searchPage.isSearchOptionApplied(searchOption);
   });
 });

@@ -1,18 +1,15 @@
-import {
-  By,
-  locateWith,
-  WebDriver,
-} from "selenium-webdriver";
+import { By, WebDriver } from "selenium-webdriver";
 import BasePage from "./base_page";
 import SearchResultComponent from "../page_components/search_result_component";
 import FilterComponent from "../page_components/filter_component";
+import ItemPage from "./item_page";
 
 export default class SearchPage extends BasePage {
-  #searchResultBy = locateWith(By.className("book-desc")).below(
-    By.className("search-results-wrap"),
+  #searchResultBy = By.xpath(
+    "//div[@class='booklist-wrap']//div[@class='product']",
   );
 
-  #filteringOptionsBy = By.className("filters-content")
+  #filteringOptionsBy = By.className("filters-content");
 
   constructor(driver: WebDriver) {
     super(driver);
@@ -25,8 +22,48 @@ export default class SearchPage extends BasePage {
   }
 
   public async getFilteringOptions() {
-    const filters = await this.driver.findElement(this.#filteringOptionsBy)
+    const filters = await this.driver.findElement(this.#filteringOptionsBy);
 
-    return new FilterComponent(filters)
+    console.log(await filters.getText())
+
+    return new FilterComponent(filters);
+  }
+
+  public async doesSelectedSubjectShowFilteredResults() {
+    const filters = await this.getFilteringOptions();
+    const selectedSubject = await filters.getSelectedSubjectText();
+
+    expect(await this.driver.getTitle()).toContain(selectedSubject);
+  }
+
+  public async doSearchResultsShowUp() {
+    expect(await this.getSearchResults()).toBeTruthy();
+  }
+
+  public async doSearchResultsContainSearchKeyWord(searchKeyWord: string) {
+    const results = await this.getSearchResults()
+
+    for (const result of results) {
+      const title = await result.getTitle();
+
+      if (title.includes(searchKeyWord)) {
+        expect(title).toContain(searchKeyWord.toLowerCase());
+      } else {
+        await result.clickTitle();
+
+        const itemPage = new ItemPage(this.driver); 
+        const desc = itemPage.getDescription();
+        this.driver.navigate().back();
+
+        expect(desc).toContain(searchKeyWord.toLowerCase());
+      }
+    }
+
+  }
+
+  public async isSearchOptionApplied(option: string) {
+    const url = await this.driver.getCurrentUrl()
+
+    expect(url).toContain(option)
   }
 }

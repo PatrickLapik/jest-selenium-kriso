@@ -6,14 +6,55 @@ export default class FilterComponent extends BaseComponent {
     super(root);
   }
 
-  public async getSubjects() {
-    const subjects = await this.root.findElement(By.className("left-subjects"));
+  #priceFiltersBy = By.xpath("//h3[text()='Hind']/following-sibling::div");
+  #aTagBy = By.css("a");
+  #subjectsBy = By.className("left-subjects");
+  #clickableBy = (value: string) =>
+    By.xpath(`//li/a[text()='${value}']`);
 
-    return await subjects.findElements(By.css("a"));
+  public async getSubjects() {
+    const subjects = await this.root.findElement(this.#subjectsBy);
+
+    return await subjects.findElements(this.#aTagBy);
   }
 
-  public async getSelectedSubject() {
-    const subjects = await this.getSubjects();
-    return subjects.find((e) => e.findElement(By.css(".current")));
+  public async findAndClickFilter(value: string) {
+    const filter = await this.root.findElement(this.#clickableBy(value))
+    await filter.click();
+  }
+
+  public async getSelectedSubjectText() {
+    const subjectText = await this.root
+      .findElement(By.css(".left-subjects .current > a"))
+      .getText();
+    return this.cleanText(subjectText);
+  }
+
+  public async getPriceFilters() {
+    const prices = await this.root.findElement(this.#priceFiltersBy);
+    return await prices.findElements(this.#aTagBy);
+  }
+
+  public async getMinMaxPriceFromPriceFilter() {
+    const prices = await this.getPriceFilters();
+    const parsedPrices = await Promise.all(
+      prices.map(async (e) => {
+        const text = await e.getText();
+        const matches = text.match(/\d{1,3},\d{2}/g);
+
+        if (!matches || matches.length < 2) return null;
+
+        const [minStr, maxStr] = matches;
+        return {
+          min: parseFloat(minStr.replace(",", ".")),
+          max: parseFloat(maxStr.replace(",", ".")),
+        };
+      }),
+    );
+    return parsedPrices;
+  }
+
+  private cleanText(text: string) {
+    return text.replace(/\s*\(\d+\)\s*$/, "").trim();
   }
 }

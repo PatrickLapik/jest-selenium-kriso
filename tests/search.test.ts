@@ -48,7 +48,6 @@ describe("Search products by keywords", () => {
     const filters = await searchPage.getFilteringOptions();
     await filters.findAndClickFilter("Arts and Architecture");
     await searchPage.doesSelectedSubjectShowFilteredResults();
-
   });
 
   test("Ensure that products can be sorted by price", async () => {
@@ -60,9 +59,11 @@ describe("Search products by keywords", () => {
     const firstPriceFilter = priceFilters[0];
 
     const minMax = await filters.getMinMaxPriceFromPriceFilter();
+
     if (!minMax[0]) {
       return;
     }
+
     const firstMinMax = minMax[0];
 
     await firstPriceFilter.click();

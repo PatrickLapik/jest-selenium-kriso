@@ -10,7 +10,7 @@ export default class FilterComponent extends BaseComponent {
   #aTagBy = By.css("a");
   #subjectsBy = By.className("left-subjects");
   #clickableBy = (value: string) =>
-    By.xpath(`//li/a[text()='${value}']`);
+    By.xpath(`//div[@id='section-wrap']//li/a[contains(text(), '${value}')]`);
 
   public async getSubjects() {
     const subjects = await this.root.findElement(this.#subjectsBy);

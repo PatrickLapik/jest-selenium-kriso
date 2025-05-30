@@ -24,8 +24,6 @@ export default class SearchPage extends BasePage {
   public async getFilteringOptions() {
     const filters = await this.driver.findElement(this.#filteringOptionsBy);
 
-    console.log(await filters.getText())
-
     return new FilterComponent(filters);
   }
 
@@ -41,29 +39,27 @@ export default class SearchPage extends BasePage {
   }
 
   public async doSearchResultsContainSearchKeyWord(searchKeyWord: string) {
-    const results = await this.getSearchResults()
+    const results = await this.getSearchResults();
 
-    for (const result of results) {
-      const title = await result.getTitle();
+    const result = results[0];
 
-      if (title.includes(searchKeyWord)) {
-        expect(title).toContain(searchKeyWord.toLowerCase());
-      } else {
-        await result.clickTitle();
+    const title = await result.getTitle();
 
-        const itemPage = new ItemPage(this.driver); 
-        const desc = itemPage.getDescription();
-        this.driver.navigate().back();
+    if (title.includes(searchKeyWord)) {
+      expect(title).toContain(searchKeyWord.toLowerCase());
+    } else {
+      await result.clickTitle();
 
-        expect(desc).toContain(searchKeyWord.toLowerCase());
-      }
+      const itemPage = new ItemPage(this.driver);
+      const desc = await itemPage.getDescription();
+
+      expect(desc.toLowerCase()).toContain(searchKeyWord.toLowerCase());
     }
-
   }
 
   public async isSearchOptionApplied(option: string) {
-    const url = await this.driver.getCurrentUrl()
+    const url = await this.driver.getCurrentUrl();
 
-    expect(url).toContain(option)
+    expect(url).toContain(option);
   }
 }

@@ -22,6 +22,10 @@ export default class SearchResultComponent extends BaseComponent {
     return await this.root.findElement(By.className("intro")).getText();
   }
 
+  public async addToCart() {
+    await this.root.
+  }
+
   public async getPrice() {
     const text = await this.root
       .findElement(By.className("book-price"))

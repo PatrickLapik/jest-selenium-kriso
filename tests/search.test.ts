@@ -1,31 +1,22 @@
-import { Browser, Builder } from "selenium-webdriver";
-import type { WebDriver } from "selenium-webdriver";
 import SearchPage from "../pages/search_page";
-import { Options } from "selenium-webdriver/firefox";
+import Driver from "../driver-config";
 
-const url = "https://www.kriso.ee";
-const TIMEOUT = 5000;
-const searchKeyWord = "harry";
+const searchKeyWord = "harry potter";
 
-let driver: WebDriver;
 let searchPage: SearchPage;
+let driverConfig: Driver 
 
 describe("Search products by keywords", () => {
-  beforeEach(async () => {
-    const options = new Options().addArguments("--headless");
-    driver = await new Builder().forBrowser(Browser.FIREFOX).setFirefoxOptions(options).build();
+  beforeAll(async () => {
+    driverConfig = new Driver();
+    await driverConfig.initializeDriver();
 
-    await driver.manage().window().maximize();
-    await driver.manage().setTimeouts({ implicit: TIMEOUT });
-
-    await driver.get(url);
-
-    searchPage = new SearchPage(driver);
+    searchPage = new SearchPage(driverConfig.getDriver());
     await searchPage.acceptCookies();
   });
 
-  afterEach(async () => {
-    await driver.quit();
+  afterAll(async () => {
+    await driverConfig.quit();
   });
 
   test("Confirm the page has a Kriso title/logo", async () => {
@@ -37,22 +28,17 @@ describe("Search products by keywords", () => {
     await searchPage.doSearchResultsShowUp();
   });
 
-  test("Seach harry potter and ensure that the results contain the search keyword", async () => {
-    const searchKeyWord = "harry potter";
-    await searchPage.search(searchKeyWord);
+  test("Search harry potter and ensure that the results contain the search keyword", async () => {
     await searchPage.doSearchResultsContainSearchKeyWord(searchKeyWord);
   });
 
   test("Ensure that products can be sorted by subject", async () => {
-    await searchPage.search(searchKeyWord);
     const filters = await searchPage.getFilteringOptions();
     await filters.findAndClickFilter("Arts and Architecture");
     await searchPage.doesSelectedSubjectShowFilteredResults();
   });
 
   test("Ensure that products can be sorted by price", async () => {
-    await searchPage.search(searchKeyWord);
-
     let filters = await searchPage.getFilteringOptions();
 
     const priceFilters = await filters.getPriceFilters();

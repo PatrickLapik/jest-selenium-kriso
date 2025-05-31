@@ -1,4 +1,4 @@
-import { By, Locator, WebDriver } from "selenium-webdriver";
+import { By, Locator, until, WebDriver, WebElement } from "selenium-webdriver";
 
 export default class BasePage {
   protected driver: WebDriver;
@@ -12,6 +12,10 @@ export default class BasePage {
   #cookieAcceptBy = By.className("cc-nb-okagree");
 
   #logoBy = By.className("icon-kriso-logo");
+
+  #cartButtonBy = By.className("cart-bubble full");
+
+  #modalCloseButtonBy = By.className("wnd-close");
 
   constructor(driver: WebDriver) {
     this.driver = driver;
@@ -42,5 +46,23 @@ export default class BasePage {
   public async isLogoRendered() {
     const logo = await this.driver.findElement(this.#logoBy);
     expect(logo).toBeDefined();
+  }
+
+  public async getItemCountInCart() {
+    return await this.driver.findElement(this.#cartButtonBy).getText();
+  }
+
+  public async closeModal() {
+    const button = await this.driver.findElement(this.#modalCloseButtonBy);
+    await this.waitForElementRendered(button);
+    await button.click();
+  }
+
+  public async waitForElementRendered(element: WebElement) {
+    await this.driver.wait(until.elementIsVisible(element), 2000);
+  }
+
+  public async ensureUrlContains(value: string) {
+    expect(await this.driver.getCurrentUrl()).toContain(value);
   }
 }

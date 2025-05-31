@@ -11,6 +11,11 @@ export default class FilterComponent extends BaseComponent {
   #subjectsBy = By.className("left-subjects");
   #clickableBy = (value: string) =>
     By.xpath(`//div[@id='section-wrap']//li/a[contains(text(), '${value}')]`);
+  #selectedSubjectBy = By.xpath("//li[@class='filtered current selected']/a");
+  #itemCountBy = (value: string) =>
+    By.xpath(
+      `//div[@id='section-wrap']//li/a[contains(text(), '${value}')]/span`,
+    );
 
   public async getSubjects() {
     const subjects = await this.root.findElement(this.#subjectsBy);
@@ -19,13 +24,13 @@ export default class FilterComponent extends BaseComponent {
   }
 
   public async findAndClickFilter(value: string) {
-    const filter = await this.root.findElement(this.#clickableBy(value))
+    const filter = await this.root.findElement(this.#clickableBy(value));
     await filter.click();
   }
 
   public async getSelectedSubjectText() {
     const subjectText = await this.root
-      .findElement(By.css(".left-subjects .current > a"))
+      .findElement(this.#selectedSubjectBy)
       .getText();
     return this.cleanText(subjectText);
   }
@@ -33,6 +38,16 @@ export default class FilterComponent extends BaseComponent {
   public async getPriceFilters() {
     const prices = await this.root.findElement(this.#priceFiltersBy);
     return await prices.findElements(this.#aTagBy);
+  }
+
+  public async getItemCountOnFilters(name: string) {
+    const itemText = await this.root
+      .findElement(this.#itemCountBy(name))
+      .getText();
+    const digits = itemText.match(/\d+/g)?.join("") ?? "";
+    const itemCount = parseInt(digits, 10);
+
+    return isNaN(itemCount) ? 0 : itemCount;
   }
 
   public async getMinMaxPriceFromPriceFilter() {

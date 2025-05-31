@@ -6,29 +6,32 @@ export default class SearchResultComponent extends BaseComponent {
     super(root);
   }
 
-  #titleBy = By.className("book-title");
+  #bookTitleBy = By.className("book-title");
+  #addToCartButtonBy = By.className("btn or btn-add2cart wnd-modal");
+  #descriptionBy = By.className("intro");
+  #bookPriceBy = By.className("book-price");
 
   public async getTitle() {
     return await this.root
-      .findElement(By.className("book-title"))
+      .findElement(this.#bookTitleBy)
       .getAttribute("title");
   }
 
   public async clickTitle() {
-    await this.root.findElement(this.#titleBy).click();
+    await this.findAndClick(this.#bookTitleBy);
   }
 
   public async getDescription() {
-    return await this.root.findElement(By.className("intro")).getText();
+    return await this.root.findElement(this.#descriptionBy).getText();
   }
 
   public async addToCart() {
-    await this.root.
+    await this.root.findElement(this.#addToCartButtonBy).click();
   }
 
   public async getPrice() {
     const text = await this.root
-      .findElement(By.className("book-price"))
+      .findElement(this.#bookPriceBy)
       .getText();
 
     const parsedPrice = text
